@@ -1,0 +1,33 @@
+{
+  "name": "practice-backend-2026",
+  "version": "1.0.0",
+  "description": "Веб-программирование | 2026",
+  "main": "src/server.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "test": "echo \"No tests yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArtMen4ik/practice-backend-2026.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ArtMen4ik/practice-backend-2026/issues"
+  },
+  "homepage": "https://github.com/ArtMen4ik/practice-backend-2026#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "prisma": "^7.4.2"
+  }
+}
