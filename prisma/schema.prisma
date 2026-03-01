@@ -14,7 +14,6 @@ enum Role {
 
 enum BookingStatus {
   PENDING
-  CONFIRMED
   CANCELLED
   COMPLETED
 }
@@ -61,7 +60,6 @@ model Service {
   updatedAt      DateTime @updatedAt
 
   photographer PhotographerProfile @relation(fields: [photographerId], references: [id])
-  bookings     Booking[]
 
   @@index([photographerId])
 }
@@ -70,22 +68,20 @@ model Booking {
   id             String        @id @default(uuid())
   photographerId String
   clientId       String
-  serviceId      String
   startAt        DateTime
   endAt          DateTime
+  durationHours  Int
   status         BookingStatus @default(PENDING)
   cancelReason   String?
+  cancelledById  String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   photographer PhotographerProfile @relation(fields: [photographerId], references: [id])
-  client       User               @relation("ClientBookings", fields: [clientId], references: [id])
-  service      Service            @relation(fields: [serviceId], references: [id])
+  client       User                @relation("ClientBookings", fields: [clientId], references: [id])
   review       Review?
 
   @@index([photographerId, startAt, endAt])
-  @@index([clientId])
-  @@index([status])
 }
 
 model Review {
