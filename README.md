@@ -1,4 +1,4 @@
-# Booking API — Запись к фотографу на фотосессию
+# Booking API — Запись к фотографу на фотосессию, Выполнил Фефелов Артемий 1исп21
 
 ## 📌 Предметная область
 
@@ -49,10 +49,27 @@
 
 ## Booking.status
 
-- `PENDING` — создано, ожидает подтверждения
-- `CONFIRMED` — подтверждено
+- `PENDING` — создано, ожидает выполнения
 - `CANCELLED` — отменено
 - `COMPLETED` — завершено
+
+### ✅ Разрешённые переходы
+
+- `PENDING → CANCELLED` (клиент / админ)
+- `PENDING → COMPLETED` (система по времени или админ)
+
+### ❌ Запрещённые переходы
+
+- Любые переходы из `CANCELLED`
+- Любые переходы из `COMPLETED`
+
+---
+
+## 🚨 Возможные ошибки
+
+- `409 TIME_CONFLICT` — пересечение интервалов бронирования
+- `400 VALIDATION_ERROR` — нарушение бизнес-правил (длительность < 1, startAt в прошлом и т.д.)
+- `403 FORBIDDEN` — доступ к чужому бронированию
 
 ---
 
@@ -69,14 +86,6 @@
 
 - Любые переходы из `CANCELLED`
 - Любые переходы из `COMPLETED`
-
----
-
-## 🚨 Возможные ошибки
-
-- `409 Conflict` — пересечение интервалов бронирования
-- `403 Forbidden` — недостаточно прав
-- `400 Bad Request` — некорректные данные (например, `endAt <= startAt`)
 
 ---
 
@@ -117,13 +126,13 @@
 
 ## 📅 Bookings
 
-| Метод | Endpoint                      | Доступ                                      |
-| ----- | ----------------------------- | ------------------------------------------- |
-| POST  | `/bookings`                   | CLIENT / ADMIN                              |
-| GET   | `/bookings/my`                | CLIENT                                      |
-| GET   | `/bookings`                   | ADMIN                                       |
-| GET   | `/photographers/:id/bookings` | PHOTOGRAPHER (свой) / ADMIN                 |
-| POST  | `/bookings/:id/cancel`        | CLIENT (свою) / PHOTOGRAPHER (свою) / ADMIN |
+| Метод | Endpoint                      | Доступ                      |
+| ----- | ----------------------------- | --------------------------- |
+| POST  | `/bookings`                   | CLIENT / ADMIN              |
+| GET   | `/bookings/my`                | CLIENT                      |
+| GET   | `/bookings`                   | ADMIN                       |
+| GET   | `/photographers/:id/bookings` | PHOTOGRAPHER (свой) / ADMIN |
+| POST  | `/bookings/:id/cancel`        | CLIENT (свою) / ADMIN       |
 
 ### Создание бронирования
 
@@ -132,14 +141,17 @@
 ```
 {
   "photographerId": "uuid",
-  "serviceId": "uuid",
   "startAt": "ISO datetime",
-  "endAt": "ISO datetime"
+  "durationHours": 1
 }
 ```
 
-**Ошибка:**  
-`409 Conflict` — если есть пересечение по времени
+**Бизнес-ограничения:**
+
+- Минимальная длительность — 1 час
+- Только целые часы (1, 2, 3 и т.д.)
+- startAt должен быть в будущем
+- Нельзя создать бронь при пересечении интервалов
 
 ---
 
