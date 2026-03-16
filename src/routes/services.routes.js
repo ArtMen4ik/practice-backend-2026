@@ -5,18 +5,105 @@ const { auth } = require("../middleware/auth");
 const { requireRole } = require("../middleware/requireRole");
 const { validate } = require("../middleware/validate");
 const { ApiError } = require("../utils/apiError");
+const {
+  createListQuerySchema,
+  queryBooleanSchema,
+  buildListMeta,
+  getPaginationParams,
+  pickDefinedFilters,
+} = require("../utils/list");
 
-router.get("/photographers/:id/services", async (req, res, next) => {
-  try {
-    const items = await prisma.service.findMany({
-      where: { photographerId: req.params.id, isActive: true },
-      orderBy: { createdAt: "desc" },
-    });
-    res.json({ data: items });
-  } catch (e) {
-    next(e);
-  }
+const serviceListSchema = z.object({
+  body: z.object({}).passthrough(),
+  params: z.object({ id: z.string().uuid() }),
+  query: createListQuerySchema({
+    sortBy: ["createdAt", "priceCents", "durationMin", "title"],
+    defaultSortBy: "createdAt",
+    filters: {
+      isActive: queryBooleanSchema.optional(),
+      search: z.string().max(120).optional(),
+      minPriceCents: z.coerce.number().int().min(0).optional(),
+      maxPriceCents: z.coerce.number().int().min(0).optional(),
+      minDurationMin: z.coerce.number().int().min(15).optional(),
+      maxDurationMin: z.coerce.number().int().min(15).optional(),
+    },
+  }),
 });
+
+router.get(
+  "/photographers/:id/services",
+  validate(serviceListSchema),
+  async (req, res, next) => {
+    try {
+      const {
+        isActive,
+        search,
+        minPriceCents,
+        maxPriceCents,
+        minDurationMin,
+        maxDurationMin,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+      } = req.validated.query;
+
+      const where = {
+        photographerId: req.validated.params.id,
+        ...(isActive !== undefined ? { isActive } : { isActive: true }),
+        ...(search
+          ? { title: { contains: search, mode: "insensitive" } }
+          : {}),
+        ...(minPriceCents !== undefined || maxPriceCents !== undefined
+          ? {
+              priceCents: {
+                ...(minPriceCents !== undefined ? { gte: minPriceCents } : {}),
+                ...(maxPriceCents !== undefined ? { lte: maxPriceCents } : {}),
+              },
+            }
+          : {}),
+        ...(minDurationMin !== undefined || maxDurationMin !== undefined
+          ? {
+              durationMin: {
+                ...(minDurationMin !== undefined ? { gte: minDurationMin } : {}),
+                ...(maxDurationMin !== undefined ? { lte: maxDurationMin } : {}),
+              },
+            }
+          : {}),
+      };
+
+      const total = await prisma.service.count({ where });
+      const { skip, take } = getPaginationParams(page, limit);
+      const items = await prisma.service.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { [sortBy]: sortOrder },
+      });
+
+      res.json({
+        data: items,
+        meta: buildListMeta({
+          page,
+          limit,
+          total,
+          sortBy,
+          sortOrder,
+          filters: pickDefinedFilters({
+            isActive,
+            search,
+            minPriceCents,
+            maxPriceCents,
+            minDurationMin,
+            maxDurationMin,
+          }),
+        }),
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 const createSchema = z.object({
   body: z.object({

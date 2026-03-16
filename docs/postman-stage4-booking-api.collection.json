@@ -1,0 +1,168 @@
+{
+  "info": {
+    "_postman_id": "dfe3f8ab-b7b2-4f22-8e55-0c468d024001",
+    "name": "Booking API Stage 4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminToken", "value": "" },
+    { "key": "clientToken", "value": "" },
+    { "key": "photographerId", "value": "" },
+    { "key": "serviceId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "reviewId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Photographers",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/photographers?page=1&limit=5&sortBy=createdAt&sortOrder=desc&city=Kazan"
+          }
+        },
+        {
+          "name": "Schedule",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/photographers/{{photographerId}}/schedule?from=2026-04-01T08:00:00.000Z&to=2026-04-01T18:00:00.000Z"
+          }
+        },
+        {
+          "name": "Reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/photographers/{{photographerId}}/reviews?page=1&limit=10&sortBy=createdAt&sortOrder=desc"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "List by photographer",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/photographers/{{photographerId}}/services?page=1&limit=10&sortBy=priceCents&sortOrder=asc&minDurationMin=60"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Available photographers",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/search/available?startAt=2026-04-01T10:00:00.000Z&endAt=2026-04-01T11:00:00.000Z&city=Kazan&serviceId={{serviceId}}&page=1&limit=10&sortBy=averageRating&sortOrder=desc"
+          }
+        },
+        {
+          "name": "Empty result",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/search/available?startAt=2026-04-01T10:00:00.000Z&endAt=2026-04-01T11:00:00.000Z&city=Kazan&serviceId={{serviceId}}&minRating=5&page=1&limit=10&sortBy=displayName&sortOrder=asc"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photographerId\": \"{{photographerId}}\",\n  \"startAt\": \"2026-04-01T10:00:00.000Z\",\n  \"durationHours\": 1\n}"
+            },
+            "url": "{{baseUrl}}/bookings"
+          }
+        },
+        {
+          "name": "My bookings filtered",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/bookings/my?page=1&limit=10&status=PENDING&sortBy=startAt&sortOrder=asc"
+          }
+        },
+        {
+          "name": "Complete booking",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"rating\": 5,\n  \"comment\": \"Great experience and clear communication\"\n}"
+            },
+            "url": "{{baseUrl}}/reviews"
+          }
+        },
+        {
+          "name": "Delete review",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/reviews/{{reviewId}}"
+          }
+        }
+      ]
+    }
+  ]
+}
