@@ -52,9 +52,16 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 
 - **User** — пользователь системы (CLIENT / PHOTOGRAPHER / ADMIN)
 - **PhotographerProfile** — профиль фотографа (ресурс, который бронируют)
-- **Service** — услуга (портретная, семейная и т.п.), длительность и цена
+- **Service** — каталог услуг фотографа (портретная, семейная и т.п.), длительность и цена
 - **Booking** — бронь на временной интервал со статусом
 - **Review** — отзыв клиента после завершённого бронирования
+
+### Важное уточнение по модели
+
+- `Booking` сейчас **не содержит** `serviceId`
+- Бронь создаётся напрямую на фотографа и временной интервал
+- `Service` в текущей реализации используется как отдельный каталог предложений фотографа для поиска и отображения
+- Стоимость и длительность услуги не копируются в `Booking`
 
 ---
 
@@ -75,9 +82,22 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 
 | Роль             | Описание                                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------- |
-| **ADMIN**        | Полный доступ: управление пользователями, профилями, услугами, бронированиями и отзывами |
-| **PHOTOGRAPHER** | Управляет своим профилем и услугами, видит свои бронирования                             |
+| **ADMIN**        | Полный доступ: управление профилями, услугами, бронированиями и отзывами                |
+| **PHOTOGRAPHER** | В текущей реализации читает свои бронирования по endpoint `/photographers/:id/bookings` |
 | **CLIENT**       | Создаёт и отменяет свои бронирования, оставляет отзывы                                   |
+
+### Lifecycle роли `PHOTOGRAPHER`
+
+Сейчас для роли `PHOTOGRAPHER` реализован только сценарий просмотра своих бронирований:
+
+- `GET /photographers/:id/bookings` — доступен `PHOTOGRAPHER` и `ADMIN`
+- фотограф может видеть бронирования только своего профиля
+
+Не реализовано:
+
+- самостоятельное редактирование своего профиля
+- самостоятельное создание/редактирование/удаление своих услуг
+- подтверждение бронирования фотографом
 
 ---
 
@@ -92,7 +112,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 ### ✅ Разрешённые переходы
 
 - `PENDING → CANCELLED` (клиент / админ)
-- `PENDING → COMPLETED` (система по времени или админ)
+- `PENDING → COMPLETED` (админ)
 
 ### ❌ Запрещённые переходы
 
@@ -106,22 +126,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 - `409 TIME_CONFLICT` — пересечение интервалов бронирования
 - `400 VALIDATION_ERROR` — нарушение бизнес-правил (длительность < 1, startAt в прошлом и т.д.)
 - `403 FORBIDDEN` — доступ к чужому бронированию
-
----
-
-## ✅ Разрешённые переходы
-
-- `PENDING → CONFIRMED` (фотограф / админ)
-- `PENDING → CANCELLED` (клиент / админ)
-- `CONFIRMED → CANCELLED` (клиент / фотограф / админ)
-- `CONFIRMED → COMPLETED` (система по времени или админ вручную)
-
----
-
-## ❌ Запрещённые переходы
-
-- Любые переходы из `CANCELLED`
-- Любые переходы из `COMPLETED`
 
 ---
 
@@ -143,8 +147,10 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 | ------ | -------------------- | --------------------------- |
 | GET    | `/photographers`     | Все                         |
 | GET    | `/photographers/:id` | Все                         |
+| GET    | `/photographers/:id/schedule` | Все                  |
+| GET    | `/photographers/:id/reviews`  | Все                  |
 | POST   | `/photographers`     | ADMIN                       |
-| PATCH  | `/photographers/:id` | ADMIN / PHOTOGRAPHER (свой) |
+| PATCH  | `/photographers/:id` | ADMIN                       |
 | DELETE | `/photographers/:id` | ADMIN                       |
 
 ---
@@ -154,9 +160,9 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 | Метод  | Endpoint                      | Доступ                      |
 | ------ | ----------------------------- | --------------------------- |
 | GET    | `/photographers/:id/services` | Все                         |
-| POST   | `/photographers/:id/services` | PHOTOGRAPHER (свой) / ADMIN |
-| PATCH  | `/services/:id`               | PHOTOGRAPHER (свой) / ADMIN |
-| DELETE | `/services/:id`               | PHOTOGRAPHER (свой) / ADMIN |
+| POST   | `/services`                   | ADMIN                       |
+| PATCH  | `/services/:id`               | ADMIN                       |
+| DELETE | `/services/:id`               | ADMIN                       |
 
 ---
 
@@ -169,6 +175,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 | GET   | `/bookings`                   | ADMIN                       |
 | GET   | `/photographers/:id/bookings` | PHOTOGRAPHER (свой) / ADMIN |
 | POST  | `/bookings/:id/cancel`        | CLIENT (свою) / ADMIN       |
+| POST  | `/bookings/:id/complete`      | ADMIN                       |
 
 ### Создание бронирования
 
@@ -188,6 +195,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 - Только целые часы (1, 2, 3 и т.д.)
 - startAt должен быть в будущем
 - Нельзя создать бронь при пересечении интервалов
+- Бронь не хранит ссылку на `Service`, только `photographerId` и время
 
 ---
 
@@ -214,7 +222,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
 
 - Чёткое разделение ролей и прав доступа
 - Защита от пересечений временных интервалов
-- Полный жизненный цикл для каждой сущности
+- Явный минимальный жизненный цикл без скрытых статусов
 - Соответствие ER-диаграмме и API-контракту
 
 ---
