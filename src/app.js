@@ -8,6 +8,7 @@ const photographersRoutes = require("./routes/photographers.routes");
 const servicesRoutes = require("./routes/services.routes");
 const bookingsRoutes = require("./routes/bookings.routes");
 const reviewsRoutes = require("./routes/reviews.routes");
+const docsRoutes = require("./routes/docs.routes");
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.get("/", (req, res) => res.json({ message: "Booking API is running" }));
 
 app.use("/auth", authRoutes);
+app.use("/", docsRoutes);
 app.use("/photographers", photographersRoutes);
 app.use("/", servicesRoutes);
 app.use("/", bookingsRoutes);

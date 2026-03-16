@@ -1,5 +1,41 @@
 # Booking API — Запись к фотографу на фотосессию, Выполнил Фефелов Артемий 1исп21
 
+## Этап 5: Тесты, Swagger, Docker
+
+- Автотесты: `npm test`
+- Swagger/OpenAPI: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/docs/openapi.json`
+- Запуск через Docker: `docker-compose up --build`
+
+### Что покрыто тестами
+
+- доступ без токена
+- доступ с валидным токеном
+- создание бронирования
+- пересечение временных интервалов
+- валидация бронирования с прошедшей датой
+
+### Быстрый запуск локально
+
+1. Установить зависимости: `npm install`
+2. Настроить `.env`:
+
+```env
+PORT=3000
+JWT_SECRET=supersecret
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/booking_db
+```
+
+3. Применить миграции: `npx prisma migrate deploy`
+4. Заполнить тестовыми данными: `node prisma/seed.js`
+5. Запустить приложение: `npm start`
+
+### Запуск в Docker
+
+1. Выполнить `docker-compose up --build`
+2. Дождаться запуска `db` и `app`
+3. Открыть Swagger: `http://localhost:3000/docs`
+
 ## 📌 Предметная область
 
 Сервис бронирования фотосессий у фотографа на конкретную дату и временной интервал.

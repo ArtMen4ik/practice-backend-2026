@@ -1,9 +1,6 @@
-version: "3.9"
-
 services:
   db:
-    image: postgres:15
-    container_name: booking_db
+    image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -13,6 +10,30 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d booking_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      JWT_SECRET: supersecret
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/booking_db
+    ports:
+      - "3000:3000"
+    command: >
+      sh -c "npx prisma migrate deploy &&
+      node prisma/seed.js &&
+      npm start"
 
 volumes:
   postgres_data:
